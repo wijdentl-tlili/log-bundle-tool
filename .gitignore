@@ -1,3 +1,5 @@
 .venv/
 test_logs/
 output/
+*.pyc
+__pycache__/
