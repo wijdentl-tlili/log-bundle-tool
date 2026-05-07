@@ -1,30 +1,49 @@
+import argparse
+import datetime
+from pathlib import Path
+
 from collector.collector import collect_logs
 from bundler.zipper import create_zip
-from utils.report import generate_report
-from pathlib import Path
-import datetime
 
 def main():
 
-    source_logs = input("Enter logs directory: ")
+    parser = argparse.ArgumentParser(
+        description="Log Bundle Tool"
+    )
 
-    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    parser.add_argument(
+        "command",
+        choices=["collect"],
+        help="Command to execute"
+    )
 
-    bundle_dir = f"output/bundle_{timestamp}"
+    parser.add_argument(
+        "--source",
+        required=True,
+        help="Directory containing logs"
+    )
 
-    collected = collect_logs(source_logs, bundle_dir)
+    args = parser.parse_args()
 
-    report_path = f"{bundle_dir}/report.txt"
+    if args.command == "collect":
 
-    generate_report(collected, report_path)
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 
-    zip_path = f"output/log_bundle_{timestamp}.zip"
+        bundle_dir = Path(f"output/bundle_{timestamp}")
 
-    create_zip(bundle_dir, zip_path)
+        print(f"[+] Collecting logs from: {args.source}")
 
-    print("\n[+] Bundle Created Successfully")
-    print(f"[+] ZIP: {zip_path}")
-    print(f"[+] Files Collected: {len(collected)}")
+        collected_files = collect_logs(
+            args.source,
+            bundle_dir
+        )
+
+        zip_name = f"output/log_bundle_{timestamp}.zip"
+
+        create_zip(bundle_dir, zip_name)
+
+        print(f"[+] Files collected: {len(collected_files)}")
+        print(f"[+] Bundle created: {zip_name}")
 
 if __name__ == "__main__":
     main()
