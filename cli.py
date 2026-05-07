@@ -4,6 +4,7 @@ from pathlib import Path
 
 from collector.collector import collect_logs
 from bundler.zipper import create_zip
+from utils.logger import setup_logger
 
 def main():
 
@@ -22,8 +23,15 @@ def main():
         required=True,
         help="Directory containing logs"
     )
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Enable verbose output"
+    )
 
     args = parser.parse_args()
+    logger = setup_logger(args.verbose)
+
 
     if args.command == "collect":
 
@@ -31,7 +39,7 @@ def main():
 
         bundle_dir = Path(f"output/bundle_{timestamp}")
 
-        print(f"[+] Collecting logs from: {args.source}")
+        logger.info(f"[+] Collecting logs from: {args.source}")
 
         collected_files = collect_logs(
             args.source,
@@ -42,8 +50,8 @@ def main():
 
         create_zip(bundle_dir, zip_name)
 
-        print(f"[+] Files collected: {len(collected_files)}")
-        print(f"[+] Bundle created: {zip_name}")
+        logger.info(f"[+] Files collected: {len(collected_files)}")
+        logger.info(f"[+] Bundle created: {zip_name}")
 
 if __name__ == "__main__":
     main()
