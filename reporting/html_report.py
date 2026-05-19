@@ -1,11 +1,14 @@
 from datetime import datetime
+from collections import defaultdict
 
 
 def generate_html_report(
     metadata_results,
     ioc_results,
     sensitive_results,
-    output_file
+    entropy_results,
+    output_file="report.html",
+    css_file="../../reporting/style.css"
 ):
 
     total_files = len(metadata_results)
@@ -13,95 +16,30 @@ def generate_html_report(
     html = f"""
     <!DOCTYPE html>
     <html>
-
     <head>
-
+        <meta charset="UTF-8">
         <title>Forensic Report</title>
-
-        <style>
-
-            body {{
-                font-family: Arial, sans-serif;
-                background-color: #f4f4f4;
-                padding: 20px;
-            }}
-
-            h1 {{
-                color: #333;
-            }}
-
-            .card {{
-                background: white;
-                padding: 20px;
-                margin-bottom: 20px;
-                border-radius: 10px;
-                box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            }}
-
-            table {{
-                width: 100%;
-                border-collapse: collapse;
-                margin-top: 10px;
-            }}
-
-            th, td {{
-                border: 1px solid #ddd;
-                padding: 10px;
-                text-align: left;
-            }}
-
-            th {{
-                background-color: #222;
-                color: white;
-            }}
-
-            tr:nth-child(even) {{
-                background-color: #f9f9f9;
-            }}
-
-            .hash {{
-                font-family: monospace;
-                font-size: 12px;
-                word-break: break-all;
-            }}
-
-            .danger {{
-                color: red;
-                font-weight: bold;
-            }}
-
-        </style>
-
+        <link rel="stylesheet" href="{css_file}">
     </head>
 
     <body>
 
-        <h1>Log Bundle Forensic Report</h1>
+        <div class="container">
 
-        <div class="card">
+        <h1>🕵️ Log Bundle Forensic Report</h1>
 
-            <h2>Collection Summary</h2>
-
-            <p>
-                <strong>Generated:</strong>
-                {datetime.now().isoformat()}
-            </p>
-
-            <p>
-                <strong>Total Files:</strong>
-                {total_files}
-            </p>
-
+        <div class="card summary">
+            <p><strong>Generated:</strong> {datetime.now().isoformat()}</p>
+            <p><strong>Total Files:</strong> {total_files}</p>
         </div>
 
+        <!-- ================= METADATA ================= -->
         <div class="card">
-
-            <h2>Collected Files Metadata</h2>
+            <h2>📦 Metadata</h2>
 
             <table>
-
                 <tr>
-                    <th>File Name</th>
+                    <th>File</th>
                     <th>Size</th>
                     <th>SHA256</th>
                     <th>Modified</th>
@@ -109,127 +47,205 @@ def generate_html_report(
                 </tr>
     """
 
-    # Metadata Table
-    for metadata in metadata_results:
-
+    for m in metadata_results:
         html += f"""
-            <tr>
-
-                <td>{metadata['file_name']}</td>
-
-                <td>{metadata['size_bytes']} bytes</td>
-
-                <td class="hash">
-                    {metadata['sha256']}
-                </td>
-
-                <td>{metadata['modified_time']}</td>
-
-                <td>{metadata['permissions']}</td>
-
-            </tr>
+        <tr>
+            <td>{m['file_name']}</td>
+            <td>{m['size_bytes']} bytes</td>
+            <td class="mono">{m['sha256']}</td>
+            <td>{m['modified_time']}</td>
+            <td>{m['permissions']}</td>
+        </tr>
         """
 
-    html += """
-            </table>
-        </div>
-    """
+    html += "</table></div>"
 
-    # IOC Findings
+    # ================= ENTROPY =================
     html += """
     <div class="card">
+        <h2>Entropy Analysis</h2>
+    """
 
+    if entropy_results:
+
+        grouped = defaultdict(lambda: defaultdict(list))
+
+        for r in entropy_results:
+            file = r["file"]
+            for f in r["findings"]:
+                grouped[file][f["risk"]].append(f)
+
+        for file, risks in grouped.items():
+
+            html += f"<h3>{file}</h3>"
+
+            html += """
+            <table>
+                <tr>
+                    <th>Risk</th>
+                    <th>Count</th>
+                    <th>Details</th>
+                </tr>
+            """
+
+            for risk, items in risks.items():
+
+                html += f"""
+                <tr>
+                    <td class="risk {risk.lower()}">{risk}</td>
+                    <td>{len(items)}</td>
+                    <td>
+                        <details>
+                            <summary>View Details</summary>
+                """
+
+                for item in items:
+                    html += f"""
+                    <div class="detail-box">
+                        <p><strong>Entropy:</strong> {item['entropy']}</p>
+                        <p class="mono">{item['value']}</p>
+                    </div>
+                    <hr>
+                    """
+
+                html += """
+                        </details>
+                    </td>
+                </tr>
+                """
+
+            html += "</table>"
+
+    else:
+        html += "<p>No entropy anomalies detected.</p>"
+
+    html += "</div>"
+
+    # ================= IOC =================
+    html += """
+    <div class="card">
         <h2>IOC Findings</h2>
     """
 
     if ioc_results:
 
-        for result in ioc_results:
+        grouped = defaultdict(lambda: defaultdict(list))
 
-            html += f"""
-            <h3>{result['file']}</h3>
+        for r in ioc_results:
+            file = r["file"]
+            for f in r["findings"]:
+                grouped[file][f["pattern"]].append(f)
 
+        for file, patterns in grouped.items():
+
+            html += f"<h3>{file}</h3>"
+
+            html += """
             <table>
-
                 <tr>
-                    <th>Line</th>
-                    <th>Pattern</th>
-                    <th>Content</th>
+                    <th>Type</th>
+                    <th>Count</th>
+                    <th>Details</th>
                 </tr>
             """
 
-            for finding in result["findings"]:
+            for pattern, items in patterns.items():
 
                 html += f"""
                 <tr>
+                    <td class="risk high">{pattern}</td>
+                    <td>{len(items)}</td>
+                    <td>
+                        <details>
+                            <summary>View Details</summary>
+                """
 
-                    <td>{finding['line']}</td>
+                for item in items:
+                    html += f"""
+                    <div class="detail-box">
+                        <p>Line: {item['line']}</p>
+                        <p class="mono">{item['content']}</p>
+                    </div>
+                    <hr>
+                    """
 
-                    <td class="danger">
-                        {finding['pattern']}
+                html += """
+                        </details>
                     </td>
-
-                    <td>{finding['content']}</td>
-
                 </tr>
                 """
 
-            html += "</table><br>"
+            html += "</table>"
 
     else:
-
         html += "<p>No IOC findings detected.</p>"
 
     html += "</div>"
 
-    # Sensitive Data Findings
+    # ================= SENSITIVE =================
     html += """
     <div class="card">
-
-        <h2>Sensitive Data Findings</h2>
+        <h2>Sensitive Data</h2>
     """
 
     if sensitive_results:
 
-        for result in sensitive_results:
+        grouped = defaultdict(lambda: defaultdict(list))
 
-            html += f"""
-            <h3>{result['file']}</h3>
+        for r in sensitive_results:
+            file = r["file"]
+            for f in r["findings"]:
+                grouped[file][f["type"]].append(f)
 
+        for file, types in grouped.items():
+
+            html += f"<h3>{file}</h3>"
+
+            html += """
             <table>
-
                 <tr>
                     <th>Type</th>
-                    <th>Value</th>
+                    <th>Count</th>
+                    <th>Details</th>
                 </tr>
             """
 
-            for finding in result["findings"]:
+            for t, items in types.items():
 
                 html += f"""
                 <tr>
+                    <td class="risk medium">{t}</td>
+                    <td>{len(items)}</td>
+                    <td>
+                        <details>
+                            <summary>View Details</summary>
+                """
 
-                    <td>{finding['type']}</td>
+                for item in items:
+                    html += f"""
+                    <div class="detail-box">
+                        <p class="mono">{item['value']}</p>
+                    </div>
+                    <hr>
+                    """
 
-                    <td>{finding['value']}</td>
-
+                html += """
+                        </details>
+                    </td>
                 </tr>
                 """
 
-            html += "</table><br>"
+            html += "</table>"
 
     else:
-
         html += "<p>No sensitive data detected.</p>"
 
     html += """
         </div>
-
+        </div>
     </body>
-
     </html>
     """
 
     with open(output_file, "w", encoding="utf-8") as f:
-
         f.write(html)

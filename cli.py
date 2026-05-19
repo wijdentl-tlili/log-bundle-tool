@@ -11,6 +11,7 @@ from analyzer.metadata import get_file_metadata
 from analyzer.ioc_scanner import scan_file
 from analyzer.sensitive_detector import detect_sensitive_data
 from analyzer.redactor import redact_content
+from analyzer.entropy import extract_suspicious_strings
 
 from reporting.json_report import write_json_report
 from reporting.html_report import generate_html_report
@@ -77,6 +78,7 @@ def main():
         metadata_results = []
         ioc_results = []
         sensitive_results = []
+        entropy_results = []
 
         for file in collected_files:
 
@@ -116,6 +118,16 @@ def main():
             with open(redacted_path, "w", encoding="utf-8") as redacted_file:
                 redacted_file.write(redacted_content)
 
+            # Entropy
+            entropy_findings = extract_suspicious_strings(content)
+
+            if entropy_findings:
+
+                entropy_results.append({
+                    "file": file.name,
+                    "findings": entropy_findings
+                })
+
         # JSON Report
         json_report_path = bundle_dir / "forensic_report.json"
 
@@ -123,6 +135,7 @@ def main():
             metadata_results,
             ioc_results,
             sensitive_results,
+            entropy_results,
             json_report_path
         )
 
@@ -133,6 +146,7 @@ def main():
             metadata_results,
             ioc_results,
             sensitive_results,
+            entropy_results,
             html_report_path
         )
 

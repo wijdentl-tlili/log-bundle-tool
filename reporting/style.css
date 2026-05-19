@@ -1,0 +1,101 @@
+body {
+    margin: 0;
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: #0f172a;
+    color: #e5e7eb;
+}
+
+.container {
+    padding: 30px;
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.card {
+    background: #111827;
+    border: 1px solid #1f2937;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+
+.summary {
+    text-align: center;
+    font-size: 14px;
+}
+
+h2 {
+    border-left: 4px solid #3b82f6;
+    padding-left: 10px;
+}
+
+h3 {
+    margin-top: 20px;
+    color: #93c5fd;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    overflow: hidden;
+    border-radius: 10px;
+}
+
+th {
+    background: #1f2937;
+    padding: 10px;
+    text-align: left;
+}
+
+td {
+    padding: 10px;
+    border-top: 1px solid #1f2937;
+}
+
+tr:hover {
+    background: #1e293b;
+}
+
+details {
+    cursor: pointer;
+}
+
+summary {
+    color: #60a5fa;
+    font-weight: bold;
+}
+
+.mono {
+    font-family: monospace;
+    font-size: 12px;
+    word-break: break-word;
+    color: #cbd5e1;
+}
+
+.detail-box {
+    padding: 8px;
+    background: #0b1220;
+    border-radius: 8px;
+    margin-top: 5px;
+}
+
+/* Risk colors */
+.risk.high {
+    color: #ef4444;
+    font-weight: bold;
+}
+
+.risk.medium {
+    color: #f59e0b;
+    font-weight: bold;
+}
+
+.risk.low {
+    color: #22c55e;
+    font-weight: bold;
+}
